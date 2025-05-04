@@ -1,0 +1,4 @@
+vcpkg/*
+build/*
+.vscode/*
+.cache/*

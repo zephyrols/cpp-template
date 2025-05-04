@@ -1,0 +1,5 @@
+add_subdirectory(ExampleProject)
+
+add_executable(ExampleProject_main main.cc)
+target_link_libraries(ExampleProject_main PRIVATE ExampleProject_utils)
+

@@ -1,0 +1,63 @@
+name: Initialize Project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  template-cleanup:
+    name: Clean up template files
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    if: github.event.repository.name != 'cpp-template' # Replace with your actual repository name
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Cleanup
+        run: |
+          # 用实际项目名称替换占位符
+          PROJECT_NAME="${GITHUB_REPOSITORY##*/}"
+          ORG="$GITHUB_REPOSITORY_OWNER"
+          SAFE_ORG=$(echo $ORG | sed 's/[^a-zA-Z0-9]//g' | tr '[:upper:]' '[:lower:]')
+          GROUP="com.github.$SAFE_ORG"
+
+          echo "Replacing placeholders in files..."
+
+          # 替换文件夹名称中的占位符
+          mv include/ExampleProject include/$PROJECT_NAME
+          mv src/ExampleProject src/$PROJECT_NAME
+          mv test/ExampleProject test/$PROJECT_NAME
+
+          # 替换 CMakeLists.txt 中的占位符
+          find . -type f -name "CMakeLists.txt" -exec sed -i "s/ExampleProject/$PROJECT_NAME/g" {} \;
+
+          # 替换代码文件中的占位符
+          find . -type f -name "*.cc" -exec sed -i "s/ExampleProject/$PROJECT_NAME/g" {} \;
+          find . -type f -name "*.hh" -exec sed -i "s/ExampleProject/$PROJECT_NAME/g" {} \;
+          find . -type f -name "*.md" -exec sed -i "s/ExampleProject/$PROJECT_NAME/g" {} \;
+
+          # 替换 README.md 中的占位符
+          sed -i "s/{{author_name}}/$GROUP/g" README.md
+
+          # 替换其他特定文件中的占位符 （例如 vcpkg.json）
+          sed -i "s/ExampleProject/$PROJECT_NAME/g" vcpkg.json
+
+          rm -rf \
+            .github/workflows/template-cleanup.yml \
+            LICENSE
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Template cleanup"
+      
+      - name: Push changes
+        uses : ad-m/github-push-action@v0.6.0
+        with:
+          branch: main
+          github_token: ${{ secrets.GITHUB_TOKEN }}
